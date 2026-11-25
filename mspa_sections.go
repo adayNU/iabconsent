@@ -1126,7 +1126,7 @@ func splitMspaSectionWithHeader(sid int, key string, sectionValue string) (*mspa
 		return nil, nil, errors.Wrapf(err, "parse %s section header", key)
 	}
 	if header.SectionId != sid {
-		return nil, nil, errors.Errorf("parse %s section header: section id mismatch: %d", key, header.SectionId)
+		return nil, nil, errors.Errorf("parse %s section header: section id mismatch: expected %d, got %d", key, sid, header.SectionId)
 	}
 	if len(header.SubSections) != len(segments)-2 {
 		return nil, nil, errors.Errorf("parse %s section header: mismatch number of subsections: header lists %d, found %d",

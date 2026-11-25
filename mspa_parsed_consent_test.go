@@ -1,6 +1,7 @@
 package iabconsent_test
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/go-check/check"
@@ -279,7 +280,7 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
 		{
 			desc:          "Wrong section id.",
 			consentString: "HBAA.AQAA",
-			expected:      "parse %s section header: section id mismatch: 7",
+			expected:      "parse %s section header: section id mismatch: expected %d, got 7",
 		},
 		{
 			desc:          "Wrong Version.",
@@ -330,6 +331,7 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
 
 			c.Check(p, check.IsNil)
 			var expected = strings.Replace(t.expected, "%s", m.key, 1)
+			expected = strings.Replace(expected, "%d", strconv.Itoa(m.sid), 1)
 			c.Check(err, check.ErrorMatches, expected)
 		}
 	}

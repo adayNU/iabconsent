@@ -56,6 +56,8 @@ type MspaParsedConsent struct {
 	// 0 Not Applicable. The Business does not Process the specific category of Sensitive Data.
 	// 1 No Consent
 	// 2 Consent
+	// Sensitive Data Consents is an optional subsection: the map is nil when
+	// the subsection is absent, meaning "not provided" rather than all Not Applicable.
 	SensitiveDataProcessingConsents map[int]MspaConsent
 	// Two bits for each Data Activity:
 	// 0 Not Applicable. SensitiveDataLimitUseNotice value was not applicable or no notice was provided.
