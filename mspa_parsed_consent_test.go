@@ -405,6 +405,16 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderSubsectionErrors(c *check.C) {
 	}
 }
 
+// Subsections listed in the section header without a parser for the section are skipped.
+func (s *MspaSuite) TestParseMSPASectionWithHeaderUnsupportedSubsection(c *check.C) {
+	// Indiana header listing subsection ID 2, which Indiana does not define.
+	var p, err = iabconsent.NewMspa(iabconsent.UsIndianaSID, "ZBABMA.BVVV.$%&").ParseConsent()
+	c.Assert(err, check.IsNil)
+	var mspa = p.(*iabconsent.MspaParsedConsent)
+	c.Check(mspa.SensitiveDataProcessingConsents, check.IsNil)
+	c.Check(mspa.Gpc, check.Equals, false)
+}
+
 func (s *MspaSuite) TestParseMSPAMspaMode(c *check.C) {
 	var tcs = []struct {
 		consentString string

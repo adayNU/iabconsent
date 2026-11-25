@@ -1134,6 +1134,52 @@ func splitMspaSectionWithHeader(sid int, key string, sectionValue string) (*Mspa
 	return header, segments, nil
 }
 
+// mspaSubSectionParser parses a single base64 encoded subsection segment into p.
+type mspaSubSectionParser func(p *MspaParsedConsent, subSection string) error
+
+// parseMspaSubSections parses the subsections of a section which encodes its own section header.
+// Subsections appear in the string in the order listed in the section header, and each one is parsed
+// with the parser registered for its subsection ID. Subsections without a parser are skipped.
+// segments must be validated by splitMspaSectionWithHeader.
+func parseMspaSubSections(p *MspaParsedConsent, header *MspaSectionHeader, segments []string,
+	parsers map[int]mspaSubSectionParser) error {
+	for i, subSectionId := range header.SubSections {
+		if parse, ok := parsers[subSectionId]; ok {
+			if err := parse(p, segments[i+2]); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// parseMspaGpcSubSection parses a GPC subsection and sets p.Gpc.
+func parseMspaGpcSubSection(p *MspaParsedConsent, subSection string) error {
+	var gppSubsectionConsent, err = ParseGppSubSections([]string{subSection})
+	if err != nil {
+		return err
+	}
+	p.Gpc = gppSubsectionConsent.Gpc
+	return nil
+}
+
+// newMspaSensitiveDataConsentsSubSectionParser returns a parser of a Sensitive Data Consents subsection
+// with the given number of 2 bit consent fields and expected (padded) length in bits.
+func newMspaSensitiveDataConsentsSubSectionParser(fields uint, length int) mspaSubSectionParser {
+	return func(p *MspaParsedConsent, subSection string) error {
+		var b, err = base64.RawURLEncoding.DecodeString(subSection)
+		if err != nil {
+			return errors.Wrap(err, "parse sensitive data consents subsection")
+		}
+		var r = NewConsentReader(b)
+		if r.Size() != length {
+			return errors.New("invalid sensitive data consents subsection length")
+		}
+		p.SensitiveDataProcessingConsents, err = r.ReadMspaBitfieldConsent(fields)
+		return err
+	}
+}
+
 func (m *MspaUsMD) ParseConsent() (GppParsedConsent, error) {
 	var header, segments, err = splitMspaSectionWithHeader(m.sectionId, "usmd", m.sectionValue)
 	if err != nil {
@@ -1178,19 +1224,11 @@ func (m *MspaUsMD) ParseConsent() (GppParsedConsent, error) {
 		return nil, r.Err
 	}
 
-	// Subsections appear in the string in the order listed in the section header.
-	// Subsections that are not supported are skipped.
-	for i, subSectionId := range header.SubSections {
-		var subSection = segments[i+2]
-		switch subSectionId {
-		case UsMdGpcSubSectionId:
-			var gppSubsectionConsent *GppSubSection
-			gppSubsectionConsent, err = ParseGppSubSections([]string{subSection})
-			if err != nil {
-				return p, err
-			}
-			p.Gpc = gppSubsectionConsent.Gpc
-		}
+	err = parseMspaSubSections(p, header, segments, map[int]mspaSubSectionParser{
+		UsMdGpcSubSectionId: parseMspaGpcSubSection,
+	})
+	if err != nil {
+		return p, err
 	}
 
 	return p, nil
@@ -1241,26 +1279,11 @@ func (m *MspaUsIN) ParseConsent() (GppParsedConsent, error) {
 		return nil, r.Err
 	}
 
-	// Subsections appear in the string in the order listed in the section header.
-	// Subsections that are not supported are skipped.
-	for i, subSectionId := range header.SubSections {
-		var subSection = segments[i+2]
-		switch subSectionId {
-		case UsInSensitiveDataConsentsSubSectionId:
-			var sb []byte
-			sb, err = base64.RawURLEncoding.DecodeString(subSection)
-			if err != nil {
-				return p, errors.Wrap(err, "parse sensitive data consents subsection")
-			}
-			var sr = NewConsentReader(sb)
-			if sr.Size() != MspaUsInV1SensitiveDataConsentsLength {
-				return p, errors.New("invalid sensitive data consents subsection length")
-			}
-			p.SensitiveDataProcessingConsents, err = sr.ReadMspaBitfieldConsent(8)
-			if err != nil {
-				return p, err
-			}
-		}
+	err = parseMspaSubSections(p, header, segments, map[int]mspaSubSectionParser{
+		UsInSensitiveDataConsentsSubSectionId: newMspaSensitiveDataConsentsSubSectionParser(8, MspaUsInV1SensitiveDataConsentsLength),
+	})
+	if err != nil {
+		return p, err
 	}
 
 	return p, nil
@@ -1311,26 +1334,11 @@ func (m *MspaUsKY) ParseConsent() (GppParsedConsent, error) {
 		return nil, r.Err
 	}
 
-	// Subsections appear in the string in the order listed in the section header.
-	// Subsections that are not supported are skipped.
-	for i, subSectionId := range header.SubSections {
-		var subSection = segments[i+2]
-		switch subSectionId {
-		case UsKySensitiveDataConsentsSubSectionId:
-			var sb []byte
-			sb, err = base64.RawURLEncoding.DecodeString(subSection)
-			if err != nil {
-				return p, errors.Wrap(err, "parse sensitive data consents subsection")
-			}
-			var sr = NewConsentReader(sb)
-			if sr.Size() != MspaUsKyV1SensitiveDataConsentsLength {
-				return p, errors.New("invalid sensitive data consents subsection length")
-			}
-			p.SensitiveDataProcessingConsents, err = sr.ReadMspaBitfieldConsent(8)
-			if err != nil {
-				return p, err
-			}
-		}
+	err = parseMspaSubSections(p, header, segments, map[int]mspaSubSectionParser{
+		UsKySensitiveDataConsentsSubSectionId: newMspaSensitiveDataConsentsSubSectionParser(8, MspaUsKyV1SensitiveDataConsentsLength),
+	})
+	if err != nil {
+		return p, err
 	}
 
 	return p, nil
@@ -1381,26 +1389,11 @@ func (m *MspaUsRI) ParseConsent() (GppParsedConsent, error) {
 		return nil, r.Err
 	}
 
-	// Subsections appear in the string in the order listed in the section header.
-	// Subsections that are not supported are skipped.
-	for i, subSectionId := range header.SubSections {
-		var subSection = segments[i+2]
-		switch subSectionId {
-		case UsRiSensitiveDataConsentsSubSectionId:
-			var sb []byte
-			sb, err = base64.RawURLEncoding.DecodeString(subSection)
-			if err != nil {
-				return p, errors.Wrap(err, "parse sensitive data consents subsection")
-			}
-			var sr = NewConsentReader(sb)
-			if sr.Size() != MspaUsRiV1SensitiveDataConsentsLength {
-				return p, errors.New("invalid sensitive data consents subsection length")
-			}
-			p.SensitiveDataProcessingConsents, err = sr.ReadMspaBitfieldConsent(8)
-			if err != nil {
-				return p, err
-			}
-		}
+	err = parseMspaSubSections(p, header, segments, map[int]mspaSubSectionParser{
+		UsRiSensitiveDataConsentsSubSectionId: newMspaSensitiveDataConsentsSubSectionParser(8, MspaUsRiV1SensitiveDataConsentsLength),
+	})
+	if err != nil {
+		return p, err
 	}
 
 	return p, nil
