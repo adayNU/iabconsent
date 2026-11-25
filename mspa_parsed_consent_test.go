@@ -268,7 +268,9 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
 	var tcs = []struct {
 		desc          string
 		consentString string
-		expected      string
+		// mutateHeader, if set, modifies the section's valid header before it replaces %h in consentString.
+		mutateHeader func(header string) string
+		expected     string
 	}{
 		{
 			desc:          "Missing core subsection.",
@@ -283,13 +285,14 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
 		{
 			desc:          "Wrong Version.",
 			consentString: "%h.AQAA",
-			expected:      "unsupported version: 3",
-			// header version is replaced below
+			// Version 3 instead of 1.
+			mutateHeader: func(h string) string { return h[:1] + "D" + h[2:] },
+			expected:     "unsupported version: 3",
 		},
 		{
 			desc:          "Bad header decoding.",
 			consentString: "$%&*.AQAA",
-			expected:      "parse %s section header: illegal base64 data at input byte 0",
+			expected:      "parse %s section header: decode section header: illegal base64 data at input byte 0",
 		},
 		{
 			desc:          "Bad core decoding.",
@@ -304,7 +307,9 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
 		{
 			desc:          "Subsection listed in header, but missing.",
 			consentString: "%hBYA.AQAA",
-			expected:      "mismatch number of subsections",
+			// Header with a single subsection: drop the empty subsections range.
+			mutateHeader: func(h string) string { return h[:3] },
+			expected:     "parse %s section header: mismatch number of subsections: header lists 1, found 0",
 		},
 	}
 	for _, m := range mspaTests {
@@ -312,13 +317,8 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
 			c.Log(m.desc + " - " + t.desc)
 
 			var header = m.header
-			if t.desc == "Wrong Version." {
-				// Version 3 instead of 1.
-				header = header[:1] + "D" + header[2:]
-			}
-			if t.desc == "Subsection listed in header, but missing." {
-				// Header with a single subsection: drop the empty subsections range.
-				header = header[:3]
+			if t.mutateHeader != nil {
+				header = t.mutateHeader(header)
 			}
 			var consentString = strings.Replace(t.consentString, "%h", header, 1)
 			var gppSection = iabconsent.NewMspa(m.sid, consentString)
@@ -363,9 +363,7 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderTooLong(c *check.C) {
 
 		var p, err = iabconsent.NewMspa(t.sid, t.consentString).ParseConsent()
 		c.Check(err, check.ErrorMatches, t.expected)
-		if t.expected == "invalid consent string length for v1" {
-			c.Check(p, check.IsNil)
-		}
+		c.Check(p, check.IsNil)
 	}
 }
 
@@ -399,9 +397,11 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderSubsectionErrors(c *check.C) {
 		c.Log(t.desc)
 
 		var gppSection = iabconsent.NewMspa(t.sid, t.consentString)
-		var _, err = gppSection.ParseConsent()
+		var p, err = gppSection.ParseConsent()
 
 		c.Check(err, check.ErrorMatches, t.expected)
+		// A partially parsed consent is never returned on error.
+		c.Check(p, check.IsNil)
 	}
 }
 
