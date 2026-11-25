@@ -301,7 +301,7 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
 		{
 			desc:          "Core too short.",
 			consentString: "%h.AQ",
-			expected:      "invalid consent string length for v1",
+			expected:      "parse %s consent string: invalid consent string length for v1",
 		},
 		{
 			desc:          "Subsection listed in header, but missing.",
@@ -309,6 +309,11 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
 			// Header with a single subsection: drop the empty subsections range.
 			mutateHeader: func(h string) string { return h[:3] },
 			expected:     "parse %s section header: mismatch number of subsections: header lists 1, found 0",
+		},
+		{
+			desc:          "Segment not listed in header.",
+			consentString: "%h.AQAA.AQAA",
+			expected:      "parse %s section header: mismatch number of subsections: header lists 0, found 1",
 		},
 	}
 	for _, m := range mspaTests {
@@ -337,24 +342,27 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderTooLong(c *check.C) {
 		sid           int
 		consentString string
 		expected      string
+		// partial is whether a partially parsed consent is returned with the error.
+		partial bool
 	}{
 		{
 			desc:          "Maryland core too long.",
 			sid:           iabconsent.UsMarylandSID,
 			consentString: "YBAA.AQAAAA",
-			expected:      "invalid consent string length for v1",
+			expected:      "parse usmd consent string: invalid consent string length for v1",
 		},
 		{
 			desc:          "Indiana core too long.",
 			sid:           iabconsent.UsIndianaSID,
 			consentString: "ZBAA.AQAAAAAA",
-			expected:      "invalid consent string length for v1",
+			expected:      "parse usin consent string: invalid consent string length for v1",
 		},
 		{
 			desc:          "Kentucky sensitive data consents subsection too long.",
 			sid:           iabconsent.UsKentuckySID,
 			consentString: "aBABYA.BVVV.AAAAAA",
-			expected:      "invalid sensitive data consents subsection length",
+			expected:      "parse usky subsection 1: invalid sensitive data consents subsection length",
+			partial:       true,
 		},
 	}
 	for _, t := range tcs {
@@ -362,7 +370,11 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderTooLong(c *check.C) {
 
 		var p, err = iabconsent.NewMspa(t.sid, t.consentString).ParseConsent()
 		c.Check(err, check.ErrorMatches, t.expected)
-		c.Check(p, check.IsNil)
+		if t.partial {
+			c.Check(p, check.NotNil)
+		} else {
+			c.Check(p, check.IsNil)
+		}
 	}
 }
 
@@ -377,19 +389,19 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderSubsectionErrors(c *check.C) {
 			desc:          "Indiana sensitive data consents subsection too short.",
 			sid:           iabconsent.UsIndianaSID,
 			consentString: "ZBABYA.BVVV.kk",
-			expected:      "invalid sensitive data consents subsection length",
+			expected:      "parse usin subsection 1: invalid sensitive data consents subsection length",
 		},
 		{
 			desc:          "Kentucky sensitive data consents subsection bad decoding.",
 			sid:           iabconsent.UsKentuckySID,
 			consentString: "aBABYA.BVVV.$%&",
-			expected:      "parse sensitive data consents subsection: illegal base64 data at input byte 0",
+			expected:      "parse usky subsection 1: parse sensitive data consents subsection: illegal base64 data at input byte 0",
 		},
 		{
 			desc:          "Maryland GPC subsection bad decoding.",
 			sid:           iabconsent.UsMarylandSID,
 			consentString: "YBABYA.BVVU.$%",
-			expected:      "parse gpp subsection string: illegal base64 data at input byte 0",
+			expected:      "parse usmd subsection 1: parse gpp subsection string: illegal base64 data at input byte 0",
 		},
 	}
 	for _, t := range tcs {
@@ -399,8 +411,12 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderSubsectionErrors(c *check.C) {
 		var p, err = gppSection.ParseConsent()
 
 		c.Check(err, check.ErrorMatches, t.expected)
-		// A partially parsed consent is never returned on error.
-		c.Check(p, check.IsNil)
+		// Like the other US state sections, the partially parsed consent (core subsection) is returned on
+		// subsection errors.
+		c.Assert(p, check.NotNil)
+		var mspa = p.(*iabconsent.MspaParsedConsent)
+		c.Check(mspa.Version, check.Equals, 1)
+		c.Check(mspa.MspaCoveredTransaction, check.Equals, iabconsent.MspaYes)
 	}
 }
 

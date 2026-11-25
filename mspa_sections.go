@@ -1113,7 +1113,7 @@ func parseMspaSectionHeader(s string) (*mspaSectionHeader, error) {
 
 // splitMspaSectionWithHeader splits a section of format {section header}.{core}[.{subsection}...] into
 // its segments, and parses and validates the section header against the expected Section ID.
-// It guarantees that the core segment and all subsections listed in the header are present in segments.
+// It guarantees that segments contain exactly the core segment and the subsections listed in the header.
 // Version validation is left to the caller.
 func splitMspaSectionWithHeader(sid int, key string, sectionValue string) (*mspaSectionHeader, []string, error) {
 	var segments = strings.Split(sectionValue, ".")
@@ -1128,7 +1128,7 @@ func splitMspaSectionWithHeader(sid int, key string, sectionValue string) (*mspa
 	if header.SectionId != sid {
 		return nil, nil, errors.Errorf("parse %s section header: section id mismatch: %d", key, header.SectionId)
 	}
-	if len(header.SubSections) > len(segments)-2 {
+	if len(header.SubSections) != len(segments)-2 {
 		return nil, nil, errors.Errorf("parse %s section header: mismatch number of subsections: header lists %d, found %d",
 			key, len(header.SubSections), len(segments)-2)
 	}
@@ -1142,12 +1142,12 @@ type mspaSubSectionParser func(p *MspaParsedConsent, subSection string) error
 // Subsections appear in the string in the order listed in the section header, and each one is parsed
 // with the parser registered for its subsection ID. Subsections without a parser are skipped.
 // segments must be validated by splitMspaSectionWithHeader.
-func parseMspaSubSections(p *MspaParsedConsent, header *mspaSectionHeader, segments []string,
+func parseMspaSubSections(key string, p *MspaParsedConsent, header *mspaSectionHeader, segments []string,
 	parsers map[int]mspaSubSectionParser) error {
 	for i, subSectionId := range header.SubSections {
 		if parse, ok := parsers[subSectionId]; ok {
 			if err := parse(p, segments[i+2]); err != nil {
-				return err
+				return errors.WithMessage(err, fmt.Sprintf("parse %s subsection %d", key, subSectionId))
 			}
 		}
 	}
@@ -1235,7 +1235,9 @@ var (
 	}
 )
 
-// parse parses a v1 section with a section header. On any error, it returns a nil consent.
+// parse parses a v1 section with a section header. Consistent with the other US state sections, it returns
+// a nil consent on header, decoding, version and length errors, and the partially parsed consent together
+// with the error on core field read or subsection errors.
 // It returns the GppParsedConsent interface (not *MspaParsedConsent), so that a nil result is a nil interface.
 func (s *mspaSectionWithHeader) parse(sid int, sectionValue string) (GppParsedConsent, error) {
 	var header, segments, err = splitMspaSectionWithHeader(sid, s.key, sectionValue)
@@ -1256,7 +1258,7 @@ func (s *mspaSectionWithHeader) parse(sid int, sectionValue string) (GppParsedCo
 
 	// validate the length of the core subsection for v1
 	if r.Size() != s.coreLength {
-		return nil, errors.New("invalid consent string length for v1")
+		return nil, errors.Errorf("parse %s consent string: invalid consent string length for v1", s.key)
 	}
 
 	// This block of code directly describes the format of the core subsection.
@@ -1275,14 +1277,11 @@ func (s *mspaSectionWithHeader) parse(sid int, sectionValue string) (GppParsedCo
 	}
 	// AdditionalDataProcessingConsent
 	p.PersonalDataConsents, _ = r.ReadMspaConsent()
-	if r.Err != nil {
-		return nil, r.Err
-	}
 
-	if err = parseMspaSubSections(p, header, segments, s.subSectionParsers); err != nil {
-		return nil, err
+	if err = parseMspaSubSections(s.key, p, header, segments, s.subSectionParsers); err != nil {
+		return p, err
 	}
-	return p, nil
+	return p, r.Err
 }
 
 func (m *MspaUsMD) ParseConsent() (GppParsedConsent, error) {
