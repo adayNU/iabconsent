@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/go-check/check"
-	"github.com/pkg/errors"
 
 	"github.com/openx/iabconsent"
 )
@@ -248,7 +247,7 @@ func (s *MspaSuite) TestParseMSPAError(c *check.C) {
 
 			c.Check(p, check.IsNil)
 			var expected = strings.Replace(t.expected, "%s", s.key, 1)
-			c.Check(err, check.ErrorMatches, errors.Errorf(expected).Error())
+			c.Check(err, check.ErrorMatches, expected)
 		}
 	}
 }
@@ -287,7 +286,7 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
 			consentString: "%h.AQAA",
 			// Version 3 instead of 1.
 			mutateHeader: func(h string) string { return h[:1] + "D" + h[2:] },
-			expected:     "unsupported version: 3",
+			expected:     "parse %s consent string: unsupported version: 3",
 		},
 		{
 			desc:          "Bad header decoding.",
@@ -326,7 +325,7 @@ func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
 
 			c.Check(p, check.IsNil)
 			var expected = strings.Replace(t.expected, "%s", m.key, 1)
-			c.Check(err, check.ErrorMatches, errors.Errorf(expected).Error())
+			c.Check(err, check.ErrorMatches, expected)
 		}
 	}
 }
