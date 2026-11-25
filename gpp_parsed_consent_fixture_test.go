@@ -74,4 +74,32 @@ var gppParsedConsentFixtures = map[string]map[int]*iabconsent.MspaParsedConsent{
 	"DBABAYA~BlWqqqmaqA": {iabconsent.UsNewJerseySID: mspaConsentFixtures[iabconsent.UsNewJerseySID]["BlWqqqmaqA"]},
 	// Valid GPP w/ US Tennessee MSPA, Subsection of GPC False.
 	"DBABQYA~BqqqqqqA": {iabconsent.UsTennesseeSID: mspaConsentFixtures[iabconsent.UsTennesseeSID]["BqqqqqqA"]},
+	// Valid GPP w/ US Minnesota MSPA, Subsection of GPC True.
+	"DBABIYA~BVWSSVWA.YA": {iabconsent.UsMinnesotaSID: mspaConsentFixtures[iabconsent.UsMinnesotaSID]["BVWSSVWA.YA"]},
+	// Valid GPP w/ US Maryland MSPA, Subsection of GPC True.
+	"DBABEYA~YBABYA.BVVU.YA": {iabconsent.UsMarylandSID: mspaConsentFixtures[iabconsent.UsMarylandSID]["YBABYA.BVVU.YA"]},
+	// Valid GPP w/ US Indiana MSPA, Sensitive Data Consents subsection.
+	"DBABUYA~ZBABYA.BVVV.kkk": {iabconsent.UsIndianaSID: mspaConsentFixtures[iabconsent.UsIndianaSID]["ZBABYA.BVVV.kkk"]},
+	// Valid GPP w/ US Kentucky MSPA, Sensitive Data Consents subsection.
+	"DBABCYA~aBABYA.BVVV.kkk": {iabconsent.UsKentuckySID: mspaConsentFixtures[iabconsent.UsKentuckySID]["aBABYA.BVVV.kkk"]},
+	// Valid GPP w/ US Rhode Island MSPA, Sensitive Data Consents subsection.
+	"DBABSYA~bBABYA.BVVV.kkk": {iabconsent.UsRhodeIslandSID: mspaConsentFixtures[iabconsent.UsRhodeIslandSID]["bBABYA.BVVV.kkk"]},
+	// Valid GPP w/ US National, Minnesota, Maryland, Indiana, Kentucky and Rhode Island MSPA.
+	"DBAGLE22w~BVVqAAEABCA.QA~BVWSSVWA.YA~YBABYA.BVVU.YA~ZBABYA.BVVV.kkk~aBABYA.BVVV.kkk~bBAA.AQAA": {
+		iabconsent.UsNationalSID:    mspaConsentFixtures[iabconsent.UsNationalSID]["BVVqAAEABCA.QA"],
+		iabconsent.UsMinnesotaSID:   mspaConsentFixtures[iabconsent.UsMinnesotaSID]["BVWSSVWA.YA"],
+		iabconsent.UsMarylandSID:    mspaConsentFixtures[iabconsent.UsMarylandSID]["YBABYA.BVVU.YA"],
+		iabconsent.UsIndianaSID:     mspaConsentFixtures[iabconsent.UsIndianaSID]["ZBABYA.BVVV.kkk"],
+		iabconsent.UsKentuckySID:    mspaConsentFixtures[iabconsent.UsKentuckySID]["aBABYA.BVVV.kkk"],
+		iabconsent.UsRhodeIslandSID: mspaConsentFixtures[iabconsent.UsRhodeIslandSID]["bBAA.AQAA"],
+	},
+	// Same sections as above, with the GPP header, whose length is a multiple of 4 characters.
+	"DBACLk7A~BVVqAAEABCA.QA~BVWSSVWA.YA~YBABYA.BVVU.YA~ZBABYA.BVVV.kkk~aBABYA.BVVV.kkk~bBAA.AQAA": {
+		iabconsent.UsNationalSID:    mspaConsentFixtures[iabconsent.UsNationalSID]["BVVqAAEABCA.QA"],
+		iabconsent.UsMinnesotaSID:   mspaConsentFixtures[iabconsent.UsMinnesotaSID]["BVWSSVWA.YA"],
+		iabconsent.UsMarylandSID:    mspaConsentFixtures[iabconsent.UsMarylandSID]["YBABYA.BVVU.YA"],
+		iabconsent.UsIndianaSID:     mspaConsentFixtures[iabconsent.UsIndianaSID]["ZBABYA.BVVV.kkk"],
+		iabconsent.UsKentuckySID:    mspaConsentFixtures[iabconsent.UsKentuckySID]["aBABYA.BVVV.kkk"],
+		iabconsent.UsRhodeIslandSID: mspaConsentFixtures[iabconsent.UsRhodeIslandSID]["bBAA.AQAA"],
+	},
 }

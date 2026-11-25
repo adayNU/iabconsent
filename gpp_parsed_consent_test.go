@@ -61,6 +61,15 @@ func (s *GppParseSuite) TestParseGppHeader(c *check.C) {
 				Version:  1,
 				Sections: []int{6, 7}},
 		},
+		{
+			// Header length is a multiple of 4 characters.
+			description: "US National, Minnesota, Maryland, Indiana, Kentucky and Rhode Island MSPA",
+			header:      "DBACLk7A",
+			expected: &iabconsent.GppHeader{
+				Type:     3,
+				Version:  1,
+				Sections: []int{7, 23, 24, 25, 26, 27}},
+		},
 	}
 
 	for _, tc := range tcs {

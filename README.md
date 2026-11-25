@@ -17,6 +17,11 @@ A Golang implementation of the:
   - US Colorado Multi-State Privacy Agreement
   - US Utah Multi-State Privacy Agreement
   - US Connecticut Multi-State Privacy Agreement
+  - US Florida, Montana, Oregon, Texas, Delaware, Iowa, Nebraska, New Hampshire, New Jersey, Tennessee
+  - US Minnesota (23), Maryland (24), Indiana (25), Kentucky (26), Rhode Island (27)
+    - Maryland, Indiana, Kentucky and Rhode Island use the section-header encoding
+      (`{header}.{core}[.{subsection}]`). Their single `MspaMode` field is exposed as `MspaParsedConsent.MspaMode`;
+      `MspaOptOutOptionMode` / `MspaServiceProviderMode` are not set for these sections.
 
 To install:
 ```

@@ -1060,4 +1060,198 @@ var mspaConsentFixtures = map[int]map[string]*iabconsent.MspaParsedConsent{
 			Gpc:                     true,
 		},
 	},
+	// Minnesota
+	iabconsent.UsMinnesotaSID: {
+		// usmn without GPC subsection
+		"BVWSSVWA": {
+			Version:                         1,
+			SharingNotice:                   iabconsent.NoticeProvided,
+			SaleOptOutNotice:                iabconsent.NoticeProvided,
+			TargetedAdvertisingOptOutNotice: iabconsent.NoticeProvided,
+			SaleOptOut:                      iabconsent.OptedOut,
+			TargetedAdvertisingOptOut:       iabconsent.OptedOut,
+			SensitiveDataProcessingConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.Consent,
+				1: iabconsent.NoConsent,
+				2: iabconsent.ConsentNotApplicable,
+				3: iabconsent.Consent,
+				4: iabconsent.NoConsent,
+				5: iabconsent.ConsentNotApplicable,
+				6: iabconsent.Consent,
+				7: iabconsent.NoConsent,
+			},
+			KnownChildSensitiveDataConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.NoConsent,
+			},
+			PersonalDataConsents:    iabconsent.NoConsent,
+			MspaCoveredTransaction:  iabconsent.MspaYes,
+			MspaOptOutOptionMode:    iabconsent.MspaYes,
+			MspaServiceProviderMode: iabconsent.MspaNo,
+			Gpc:                     false,
+		},
+		// usmn with subsection of GPC True
+		"BVWSSVWA.YA": {
+			Version:                         1,
+			SharingNotice:                   iabconsent.NoticeProvided,
+			SaleOptOutNotice:                iabconsent.NoticeProvided,
+			TargetedAdvertisingOptOutNotice: iabconsent.NoticeProvided,
+			SaleOptOut:                      iabconsent.OptedOut,
+			TargetedAdvertisingOptOut:       iabconsent.OptedOut,
+			SensitiveDataProcessingConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.Consent,
+				1: iabconsent.NoConsent,
+				2: iabconsent.ConsentNotApplicable,
+				3: iabconsent.Consent,
+				4: iabconsent.NoConsent,
+				5: iabconsent.ConsentNotApplicable,
+				6: iabconsent.Consent,
+				7: iabconsent.NoConsent,
+			},
+			KnownChildSensitiveDataConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.NoConsent,
+			},
+			PersonalDataConsents:    iabconsent.NoConsent,
+			MspaCoveredTransaction:  iabconsent.MspaYes,
+			MspaOptOutOptionMode:    iabconsent.MspaYes,
+			MspaServiceProviderMode: iabconsent.MspaNo,
+			Gpc:                     true,
+		},
+	},
+	// Maryland
+	iabconsent.UsMarylandSID: {
+		// usmd with default values and no subsections
+		"YBAA.AQAA": {
+			Version:                1,
+			MspaCoveredTransaction: iabconsent.MspaYes,
+			MspaMode:               iabconsent.MspaModeNotApplicable,
+		},
+		// usmd with subsection of GPC True
+		"YBABYA.BVVU.YA": {
+			Version:                         1,
+			MspaVersion:                     1,
+			MspaCoveredTransaction:          iabconsent.MspaYes,
+			MspaMode:                        iabconsent.MspaModeOptOutOption,
+			SharingNotice:                   iabconsent.NoticeProvided,
+			SaleOptOutNotice:                iabconsent.NoticeProvided,
+			TargetedAdvertisingOptOutNotice: iabconsent.NoticeProvided,
+			SaleOptOut:                      iabconsent.OptedOut,
+			TargetedAdvertisingOptOut:       iabconsent.OptedOut,
+			PersonalDataConsents:            iabconsent.NoConsent,
+			Gpc:                             true,
+		},
+	},
+	// Indiana
+	iabconsent.UsIndianaSID: {
+		// usin with default values and no subsections
+		"ZBAA.AQAA": {
+			Version:                1,
+			MspaCoveredTransaction: iabconsent.MspaYes,
+			MspaMode:               iabconsent.MspaModeNotApplicable,
+			KnownChildSensitiveDataConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.ConsentNotApplicable,
+			},
+		},
+		// usin with Sensitive Data Consents subsection
+		"ZBABYA.BVVV.kkk": {
+			Version:                         1,
+			MspaVersion:                     1,
+			MspaCoveredTransaction:          iabconsent.MspaYes,
+			MspaMode:                        iabconsent.MspaModeOptOutOption,
+			SharingNotice:                   iabconsent.NoticeProvided,
+			SaleOptOutNotice:                iabconsent.NoticeProvided,
+			TargetedAdvertisingOptOutNotice: iabconsent.NoticeProvided,
+			SaleOptOut:                      iabconsent.OptedOut,
+			TargetedAdvertisingOptOut:       iabconsent.OptedOut,
+			KnownChildSensitiveDataConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.NoConsent,
+			},
+			PersonalDataConsents: iabconsent.NoConsent,
+			SensitiveDataProcessingConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.Consent,
+				1: iabconsent.NoConsent,
+				2: iabconsent.ConsentNotApplicable,
+				3: iabconsent.Consent,
+				4: iabconsent.NoConsent,
+				5: iabconsent.ConsentNotApplicable,
+				6: iabconsent.Consent,
+				7: iabconsent.NoConsent,
+			},
+		},
+	},
+	// Kentucky
+	iabconsent.UsKentuckySID: {
+		// usky with default values and no subsections
+		"aBAA.AQAA": {
+			Version:                1,
+			MspaCoveredTransaction: iabconsent.MspaYes,
+			MspaMode:               iabconsent.MspaModeNotApplicable,
+			KnownChildSensitiveDataConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.ConsentNotApplicable,
+			},
+		},
+		// usky with Sensitive Data Consents subsection
+		"aBABYA.BVVV.kkk": {
+			Version:                         1,
+			MspaVersion:                     1,
+			MspaCoveredTransaction:          iabconsent.MspaYes,
+			MspaMode:                        iabconsent.MspaModeOptOutOption,
+			SharingNotice:                   iabconsent.NoticeProvided,
+			SaleOptOutNotice:                iabconsent.NoticeProvided,
+			TargetedAdvertisingOptOutNotice: iabconsent.NoticeProvided,
+			SaleOptOut:                      iabconsent.OptedOut,
+			TargetedAdvertisingOptOut:       iabconsent.OptedOut,
+			KnownChildSensitiveDataConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.NoConsent,
+			},
+			PersonalDataConsents: iabconsent.NoConsent,
+			SensitiveDataProcessingConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.Consent,
+				1: iabconsent.NoConsent,
+				2: iabconsent.ConsentNotApplicable,
+				3: iabconsent.Consent,
+				4: iabconsent.NoConsent,
+				5: iabconsent.ConsentNotApplicable,
+				6: iabconsent.Consent,
+				7: iabconsent.NoConsent,
+			},
+		},
+	},
+	// Rhode Island
+	iabconsent.UsRhodeIslandSID: {
+		// usri with default values and no subsections
+		"bBAA.AQAA": {
+			Version:                1,
+			MspaCoveredTransaction: iabconsent.MspaYes,
+			MspaMode:               iabconsent.MspaModeNotApplicable,
+			KnownChildSensitiveDataConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.ConsentNotApplicable,
+			},
+		},
+		// usri with Sensitive Data Consents subsection
+		"bBABYA.BVVV.kkk": {
+			Version:                         1,
+			MspaVersion:                     1,
+			MspaCoveredTransaction:          iabconsent.MspaYes,
+			MspaMode:                        iabconsent.MspaModeOptOutOption,
+			SharingNotice:                   iabconsent.NoticeProvided,
+			SaleOptOutNotice:                iabconsent.NoticeProvided,
+			TargetedAdvertisingOptOutNotice: iabconsent.NoticeProvided,
+			SaleOptOut:                      iabconsent.OptedOut,
+			TargetedAdvertisingOptOut:       iabconsent.OptedOut,
+			KnownChildSensitiveDataConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.NoConsent,
+			},
+			PersonalDataConsents: iabconsent.NoConsent,
+			SensitiveDataProcessingConsents: map[int]iabconsent.MspaConsent{
+				0: iabconsent.Consent,
+				1: iabconsent.NoConsent,
+				2: iabconsent.ConsentNotApplicable,
+				3: iabconsent.Consent,
+				4: iabconsent.NoConsent,
+				5: iabconsent.ConsentNotApplicable,
+				6: iabconsent.Consent,
+				7: iabconsent.NoConsent,
+			},
+		},
+	},
 }

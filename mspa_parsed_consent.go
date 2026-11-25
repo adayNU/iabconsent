@@ -90,6 +90,18 @@ type MspaParsedConsent struct {
 	// 1 Yes
 	// 2 No
 	MspaServiceProviderMode MspaNaYesNo
+	// Version of the MSPA. Only present in sections that use a section header
+	// (e.g. US Maryland, Indiana, Kentucky, Rhode Island). As of the Fifth Amended
+	// and Restated MSPA, this field should always be 0.
+	MspaVersion int
+	// Publisher or Advertiser, as applicable, has enabled "Opt-Out Option Mode" or "Service Provider Mode"
+	// for the "Covered Transaction". Only present in sections that use a section header
+	// (e.g. US Maryland, Indiana, Kentucky, Rhode Island), where it replaces the separate
+	// MspaOptOutOptionMode and MspaServiceProviderMode fields, which are left unset for those sections.
+	// 0 Not Applicable
+	// 1 Opt-Out Option Mode
+	// 2 Service Provider Mode
+	MspaMode MspaMode
 	// Subsections added below:
 	// Global Privacy Control (GPC) is signaled and set.
 	Gpc bool
@@ -132,6 +144,25 @@ const (
 	MspaNo
 	InvalidMspaValue
 )
+
+// MspaMode represents which MSPA mode is enabled for a Covered Transaction in
+// sections that encode a single MspaMode field instead of separate
+// MspaOptOutOptionMode and MspaServiceProviderMode fields.
+type MspaMode int
+
+const (
+	MspaModeNotApplicable MspaMode = iota
+	MspaModeOptOutOption
+	MspaModeServiceProvider
+	InvalidMspaModeValue
+)
+
+// ReadMspaMode reads integers into MSPA Mode values of
+// 0: Not Applicable, 1: Opt-Out Option Mode, 2: Service Provider Mode
+func (r *ConsentReader) ReadMspaMode() (MspaMode, error) {
+	var mm, err = r.ReadInt(2)
+	return MspaMode(mm), err
+}
 
 // ReadMspaNotice reads integers into standard MSPA Notice values of
 // 0: Not applicable, 1: Yes, notice was provided, 2: No, notice was not provided.

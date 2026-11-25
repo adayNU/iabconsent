@@ -25,6 +25,11 @@ const (
 	UsNewHampshireSID
 	UsNewJerseySID
 	UsTennesseeSID
+	UsMinnesotaSID
+	UsMarylandSID
+	UsIndianaSID
+	UsKentuckySID
+	UsRhodeIslandSID
 )
 
 // GppHeader is the first section of a GPP Consent String.
@@ -96,8 +101,8 @@ const (
 func ParseGppHeader(s string) (*GppHeader, error) {
 	// IAB's base64 conversion means a 6 bit grouped value can be converted to 8 bit bytes.
 	// Any leftover bits <8 would be skipped in normal base64 decoding.
-	// Therefore, pad with 6 '0's w/ `A` to ensure that all bits are decoded into bytes.
-	var b, err = base64.RawURLEncoding.DecodeString(s + "A")
+	// Therefore, pad with `A`s (6 '0's each) to ensure that all bits are decoded into bytes.
+	var b, err = decodeGppSegment(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse gpp header consent string")
 	}
@@ -115,6 +120,15 @@ func ParseGppHeader(s string) (*GppHeader, error) {
 	}
 	g.Sections, _ = r.ReadFibonacciRange()
 	return g, r.Err
+}
+
+// decodeGppSegment decodes a single base64 Raw URL Encoded GPP segment, padding it with `A` (6 bits of 0s)
+// to a multiple of 4 characters, so that no trailing bits are dropped by base64 decoding.
+func decodeGppSegment(s string) ([]byte, error) {
+	if rem := len(s) % 4; rem != 0 {
+		s += strings.Repeat("A", 4-rem)
+	}
+	return base64.RawURLEncoding.DecodeString(s)
 }
 
 // MapGppSectionToParser takes a base64 Raw URL Encoded string which represents a GPP v1 string

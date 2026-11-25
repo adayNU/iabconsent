@@ -207,6 +207,11 @@ func (s *MspaSuite) TestParseMSPAError(c *check.C) {
 			key:  "ustn",
 			sid:  iabconsent.UsTennesseeSID,
 		},
+		{
+			desc: "Minnesota",
+			key:  "usmn",
+			sid:  iabconsent.UsMinnesotaSID,
+		},
 	}
 	var tcs = []struct {
 		desc          string
@@ -245,5 +250,184 @@ func (s *MspaSuite) TestParseMSPAError(c *check.C) {
 			var expected = strings.Replace(t.expected, "%s", s.key, 1)
 			c.Check(err, check.ErrorMatches, errors.Errorf(expected).Error())
 		}
+	}
+}
+
+func (s *MspaSuite) TestParseMSPASectionWithHeaderError(c *check.C) {
+	var mspaTests = []struct {
+		desc   string
+		key    string
+		sid    int
+		header string
+	}{
+		{desc: "Maryland", key: "usmd", sid: iabconsent.UsMarylandSID, header: "YBAA"},
+		{desc: "Indiana", key: "usin", sid: iabconsent.UsIndianaSID, header: "ZBAA"},
+		{desc: "Kentucky", key: "usky", sid: iabconsent.UsKentuckySID, header: "aBAA"},
+		{desc: "Rhode Island", key: "usri", sid: iabconsent.UsRhodeIslandSID, header: "bBAA"},
+	}
+	var tcs = []struct {
+		desc          string
+		consentString string
+		expected      string
+	}{
+		{
+			desc:          "Missing core subsection.",
+			consentString: "%h",
+			expected:      "parse %s consent string: missing core subsection",
+		},
+		{
+			desc:          "Wrong section id.",
+			consentString: "HBAA.AQAA",
+			expected:      "parse %s section header: section id mismatch: 7",
+		},
+		{
+			desc:          "Wrong Version.",
+			consentString: "%h.AQAA",
+			expected:      "unsupported version: 3",
+			// header version is replaced below
+		},
+		{
+			desc:          "Bad header decoding.",
+			consentString: "$%&*.AQAA",
+			expected:      "parse %s section header: illegal base64 data at input byte 0",
+		},
+		{
+			desc:          "Bad core decoding.",
+			consentString: "%h.$%&*",
+			expected:      "parse %s consent string: illegal base64 data at input byte 0",
+		},
+		{
+			desc:          "Core too short.",
+			consentString: "%h.AQ",
+			expected:      "invalid consent string length for v1",
+		},
+		{
+			desc:          "Subsection listed in header, but missing.",
+			consentString: "%hBYA.AQAA",
+			expected:      "mismatch number of subsections",
+		},
+	}
+	for _, m := range mspaTests {
+		for _, t := range tcs {
+			c.Log(m.desc + " - " + t.desc)
+
+			var header = m.header
+			if t.desc == "Wrong Version." {
+				// Version 3 instead of 1.
+				header = header[:1] + "D" + header[2:]
+			}
+			if t.desc == "Subsection listed in header, but missing." {
+				// Header with a single subsection: drop the empty subsections range.
+				header = header[:3]
+			}
+			var consentString = strings.Replace(t.consentString, "%h", header, 1)
+			var gppSection = iabconsent.NewMspa(m.sid, consentString)
+			var p, err = gppSection.ParseConsent()
+
+			c.Check(p, check.IsNil)
+			var expected = strings.Replace(t.expected, "%s", m.key, 1)
+			c.Check(err, check.ErrorMatches, errors.Errorf(expected).Error())
+		}
+	}
+}
+
+// Segments must have the exact length of their fields plus padding, like the other US state sections.
+func (s *MspaSuite) TestParseMSPASectionWithHeaderTooLong(c *check.C) {
+	var tcs = []struct {
+		desc          string
+		sid           int
+		consentString string
+		expected      string
+	}{
+		{
+			desc:          "Maryland core too long.",
+			sid:           iabconsent.UsMarylandSID,
+			consentString: "YBAA.AQAAAA",
+			expected:      "invalid consent string length for v1",
+		},
+		{
+			desc:          "Indiana core too long.",
+			sid:           iabconsent.UsIndianaSID,
+			consentString: "ZBAA.AQAAAAAA",
+			expected:      "invalid consent string length for v1",
+		},
+		{
+			desc:          "Kentucky sensitive data consents subsection too long.",
+			sid:           iabconsent.UsKentuckySID,
+			consentString: "aBABYA.BVVV.AAAAAA",
+			expected:      "invalid sensitive data consents subsection length",
+		},
+	}
+	for _, t := range tcs {
+		c.Log(t.desc)
+
+		var p, err = iabconsent.NewMspa(t.sid, t.consentString).ParseConsent()
+		c.Check(err, check.ErrorMatches, t.expected)
+		if t.expected == "invalid consent string length for v1" {
+			c.Check(p, check.IsNil)
+		}
+	}
+}
+
+func (s *MspaSuite) TestParseMSPASectionWithHeaderSubsectionErrors(c *check.C) {
+	var tcs = []struct {
+		desc          string
+		sid           int
+		consentString string
+		expected      string
+	}{
+		{
+			desc:          "Indiana sensitive data consents subsection too short.",
+			sid:           iabconsent.UsIndianaSID,
+			consentString: "ZBABYA.BVVV.kk",
+			expected:      "invalid sensitive data consents subsection length",
+		},
+		{
+			desc:          "Kentucky sensitive data consents subsection bad decoding.",
+			sid:           iabconsent.UsKentuckySID,
+			consentString: "aBABYA.BVVV.$%&",
+			expected:      "parse sensitive data consents subsection: illegal base64 data at input byte 0",
+		},
+		{
+			desc:          "Maryland GPC subsection bad decoding.",
+			sid:           iabconsent.UsMarylandSID,
+			consentString: "YBABYA.BVVU.$%",
+			expected:      "parse gpp subsection string: illegal base64 data at input byte 0",
+		},
+	}
+	for _, t := range tcs {
+		c.Log(t.desc)
+
+		var gppSection = iabconsent.NewMspa(t.sid, t.consentString)
+		var _, err = gppSection.ParseConsent()
+
+		c.Check(err, check.ErrorMatches, t.expected)
+	}
+}
+
+func (s *MspaSuite) TestParseMSPAMspaMode(c *check.C) {
+	var tcs = []struct {
+		consentString string
+		mode          iabconsent.MspaMode
+	}{
+		// MspaVersion=0, MspaCoveredTransaction=1, MspaMode=0
+		{"ZBAA.AQAA", iabconsent.MspaModeNotApplicable},
+		// MspaVersion=0, MspaCoveredTransaction=1, MspaMode=1
+		{"ZBAA.AUAA", iabconsent.MspaModeOptOutOption},
+		// MspaVersion=0, MspaCoveredTransaction=1, MspaMode=2
+		{"ZBAA.AYAA", iabconsent.MspaModeServiceProvider},
+		// MspaVersion=0, MspaCoveredTransaction=1, MspaMode=3
+		{"ZBAA.AcAA", iabconsent.InvalidMspaModeValue},
+	}
+	for _, t := range tcs {
+		c.Log(t.consentString)
+
+		var p, err = iabconsent.NewMspa(iabconsent.UsIndianaSID, t.consentString).ParseConsent()
+		c.Assert(err, check.IsNil)
+		var mspa = p.(*iabconsent.MspaParsedConsent)
+		c.Check(mspa.MspaMode, check.Equals, t.mode)
+		// Sections with MspaMode do not contain MspaOptOutOptionMode and MspaServiceProviderMode.
+		c.Check(mspa.MspaOptOutOptionMode, check.Equals, iabconsent.MspaNotApplicable)
+		c.Check(mspa.MspaServiceProviderMode, check.Equals, iabconsent.MspaNotApplicable)
 	}
 }
